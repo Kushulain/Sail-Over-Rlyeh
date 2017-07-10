@@ -60,6 +60,8 @@ struct v2f {
     float4 wPos : TEXCOORD0;
 //    float4 uv2 : TEXCOORD1;
     fixed3 normal : NORMAL;
+    fixed3 tangent : TANGENT;
+    fixed3 binormal : TEXCOORD1 ;
     //float3 alphaMulti : TEXCOORD2;
     ////TESTING
     //#if (defined(DIRECTIONAL) && !defined(SHADOWS_SCREEN))
@@ -121,18 +123,46 @@ fixed4 ComputeScreenPosTEST (float4 pos)
 v2f vert (appdata_simple v)
 {
     v2f o = (v2f)0;
+    #ifdef CAM_ATTACHED
+    o.wPos = v.vertex;
+    #else
     o.wPos = mul (unity_ObjectToWorld, v.vertex);
-    float4 waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz + _Time.xx * _Waves1.xy,1,1));
-    waves1.xyz = waves1.xyz * 2.0 - 1.0;
-    float4 waves2 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves2.zz + _Time.xx * _Waves2.xy,1,1));
-    waves2.xyz = waves2.xyz * 2.0 - 1.0;
+    #endif
+
+
+    float dist = length(_WorldSpaceCameraPos-o.wPos);//length(ObjSpaceViewDir(p[0].pos));
+    dist = (1.0-smoothstep(_ClippingStart,_ClippingEnd,dist));
+    dist *= dist * dist;
+
+    float minTess = 0.1;
+    o.binormal.x = minTess;
+    o.tangent.z = minTess;
+
+
+    float waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz + _Time.xx * _Waves1.xy,1,1)).a;
+    float waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz + _Time.xx * _Waves1.xy,1,1)).a;
+    float waves1y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves1.zz + _Time.xx * _Waves1.xy,1,1)).a;
+//    waves1.xyz = waves1.xyz * 2.0 - 1.0;
+    float waves2 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves2.zz + _Time.xx * _Waves2.xy,1,1)).a;
+    float waves2x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves2.zz + _Time.xx * _Waves2.xy,1,1)).a;
+    float waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz + _Time.xx * _Waves2.xy,1,1)).a;
+//    waves2.xyz = waves2.xyz * 2.0 - 1.0;
     //float4 detail += tex2Dlod(_TextureB,float4(o.wPos.xz*0.145173,0.1,0.0));
+    o.binormal.y = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
+    o.binormal.y *= dist;
+    o.tangent.y = (_Waves1.w * waves1y + _Waves2.w * waves2y) - (_Waves1.w * waves1 + _Waves2.w * waves2);
+    o.tangent.y *= dist;
 
-    float4 results =  _Waves1.w * waves1 + _Waves2.w * waves2;
-    o.wPos.y += results.a;
+    float results =  _Waves1.w * waves1 + _Waves2.w * waves2;
+    results *=  dist;
+    o.wPos.y += results;
     o.pos = mul (UNITY_MATRIX_VP, o.wPos);
+//    o.pos = o.wPos;
 
-
+    o.tangent = normalize(o.tangent);
+    o.binormal = normalize(o.binormal);
+    o.normal = cross(o.tangent,o.binormal);
+//    o.normal = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
 
 
 //Transparent shadow receive
@@ -155,9 +185,9 @@ v2f vert (appdata_simple v)
 	o._viewDir = float4(o.wPos.xyz - _WorldSpaceCameraPos,0);
 
 	o.lightDir = WorldSpaceLightDir( v.vertex );  	
-  	float3 worldN = (results.xzy);
-    	worldN.y *= _NormalIntensity;
-  	o.normal = normalize(worldN);
+//  	float3 worldN = (results.xzy);
+//    	worldN.y *= _NormalIntensity;
+//  	o.normal = normalize(worldN);
   	#endif
 	
     return o;
@@ -180,6 +210,10 @@ v2f vert (appdata_simple v)
 #ifndef SHADOWS_DEPTH
 half4 frag (v2f i) : COLOR
 {
+//	#ifdef NO_DEPTH_ON
+//		return length(i._viewDir) / _ProjectionParams.z;
+//	#endif
+//	return float4(i.normal,1);
 	half4 texcol;
 	float dist = (smoothstep(_ClippingStart,_ClippingEnd,length(i._viewDir.xyz)));
 
@@ -193,17 +227,24 @@ half4 frag (v2f i) : COLOR
 	waves4.xyz = waves4.xyz * 2.0 - 1.0;
 
 	float3x3 nBasis = float3x3(
-	    float3(waves1.z, waves1.y, -waves1.x), // +90 degree rotation around y axis
-	    float3(waves1.x, waves1.z, -waves1.y), // -90 degree rotation around x axis
-	    float3(waves1.x, waves1.y,  waves1.z));
+	    float3(waves3.z, waves3.y, -waves3.x), // +90 degree rotation around y axis
+	    float3(waves3.x, waves3.z, -waves3.y), // -90 degree rotation around x axis
+	    float3(waves3.x, waves3.y,  waves3.z));
 
-	float3 results = normalize(waves2.x*nBasis[0] + waves2.y*nBasis[1] + waves2.z*nBasis[2]);
+	float3x3 tangentSpace = float3x3(
+	    i.binormal, // +90 degree rotation around y axis
+	    i.tangent, // -90 degree rotation around x axis
+	    i.normal);
+
+	
+
+	float3 results = normalize(waves4.x*nBasis[0] + waves4.y*nBasis[1] + waves4.z*nBasis[2]);
 //	float3 results =  _Waves1.w * waves1 + _Waves2.w * waves2;
 //	float4 results =  _Waves1.w * waves1 + _Waves2.w * waves2 + _Waves3.w * waves3;
-	results += waves3 *  _Waves3.w;
-	results += waves4 *  _Waves4.w;
-	float3 fragNormal = (results.xzy);
-	fragNormal.y += _NormalIntensity + dist * 33.0;
+//	results += waves3 *  _Waves3.w;
+//	results += waves4 *  _Waves4.w;
+	float3 fragNormal = lerp(mul(tangentSpace, results),i.normal,1.0/(1+_Waves4.w + _Waves3.w));//(results.xzy);
+//	fragNormal.y += _NormalIntensity + dist * 33.0;
 	fragNormal = normalize(fragNormal);
 
 //	return float4(fragNormal.y * 0.5 + 0.5,0.0,0.0,1.0);
@@ -214,9 +255,12 @@ half4 frag (v2f i) : COLOR
 	waves4.a * _Waves4.w);
 
 	foam /= (_Waves1.w+_Waves2.w+_Waves3.w+_Waves4.w);
-	foam *= _FoamAmount ;
-//	foam = saturate(foam);
-	foam = pow(tex2D(_Foam,float2(i.wPos.xz * 0.1)),1.0+foam * 2.0);
+	foam = 1-(waves3.a-waves4.a) * 2.0;
+	foam *= _FoamAmount;
+//	foam = pow(tex2D(_Foam,float2(i.wPos.xz * 0.1)),1.0+foam * 2.0);
+	foam = tex2D(_Foam,float2(i.wPos.xz * 0.5))*(foam);
+	foam *= foam;
+	foam *= tex2D(_Foam,float2(i.wPos.xz * 2.0));
 //	return float4(fragNormal.xyz*0.5 + 0.5,1.0);
 
 //    return 0.5
@@ -267,18 +311,18 @@ half4 frag (v2f i) : COLOR
     	float3 viewDirN = normalize(i._viewDir.xyz);
 
 	float3 reflectionDirection = reflect((viewDirN),fragNormal);
-	float mixReflectionColor = (reflectionDirection.y);
+	float mixReflectionColor = (reflectionDirection.y-0.1);
 //	return mixReflectionColor;
 //	return float4(reflect(i._viewDir.xyz,i.normal),1.0);
 //	mixReflectionColor = pow(mixReflectionColor,0.7);
 //	return mixReflectionColor;
-
-	float3 reflectionColor = (1-mixReflectionColor)*_HColor + mixReflectionColor * _ZColor;
-	mixReflectionColor *= -1.0;
+	float reflectionHorizon = pow(saturate(mixReflectionColor),0.6);
+	float3 reflectionColor = (1-reflectionHorizon)*_HColor + reflectionHorizon * _ZColor;
+	mixReflectionColor *= -4.0;
 //	mixReflectionColor += 1.0;
 	mixReflectionColor = saturate(mixReflectionColor);
 //	return mixReflectionColor;
-	reflectionColor = (1-mixReflectionColor)*reflectionColor + mixReflectionColor * _Color ;
+	reflectionColor = (1-mixReflectionColor)*reflectionColor + mixReflectionColor * (_Color);
 
 	texcol.rgb += reflectionColor;
 

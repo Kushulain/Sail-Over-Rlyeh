@@ -68,23 +68,24 @@ Shader ".Cat/Water" {
 		        #define CUTOUT
 	        	#define pass_id 0.0
            		#define GEOMETRYPASS
-				#pragma target 5.0
-				#pragma multi_compile EDITORTIME_ON EDITORTIME_OFF
+           		#define CAM_ATTACHED
+			#pragma target 5.0
+			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
 
-				#pragma exclude_renderers gles
+			#pragma exclude_renderers gles
 //				#pragma geometry GS_Main
-				#pragma vertex tessvert
-				#pragma hull hull
-				#pragma domain domain
-				#pragma fragment fragSCaster
-				#pragma fragmentoption ARB_precision_hint_fastest
-				#pragma multi_compile_shadowcaster
-				#include "UnityCG.cginc"
-				#define SHADOW_CASTER_PASS
-				#define Geometry_Flat_Pass
-				#include "HLSLSupport.cginc"
-				#include "UnityShaderVariables.cginc"
-				#include "WaterPrograms.cginc"
+			#pragma vertex tessvert
+			#pragma hull hull
+			#pragma domain domain
+			#pragma fragment fragSCaster
+			#pragma fragmentoption ARB_precision_hint_fastest
+			#pragma multi_compile_shadowcaster
+			#include "UnityCG.cginc"
+			#define SHADOW_CASTER_PASS
+			#define Geometry_Flat_Pass
+			#include "HLSLSupport.cginc"
+			#include "UnityShaderVariables.cginc"
+			#include "WaterPrograms.cginc"
            		//#include "GeometryWaterProgram.cginc"
            		#include "WaterTessellation.cginc"
 				
@@ -111,15 +112,16 @@ Shader ".Cat/Water" {
 		        #define CUTOUT
 	        	#define pass_id 0.0
            		#define GEOMETRYPASS
-				#define Geometry_Flat_Pass
-				#pragma target 5.0
-				#pragma multi_compile EDITORTIME_ON EDITORTIME_OFF
+           		#define CAM_ATTACHED
+			#define Geometry_Flat_Pass
+			#pragma target 5.0
+			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
 
 //				#pragma geometry GS_Main
-				#pragma vertex tessvert
-				#pragma fragment frag
-				#pragma hull hull
-				#pragma domain domain
+			#pragma vertex tessvert
+			#pragma fragment frag
+			#pragma hull hull
+			#pragma domain domain
 
 		    	#pragma multi_compile_fwdbase
 	        	#define UNITY_PASS_FORWARDBASE
@@ -154,22 +156,23 @@ Shader ".Cat/Water" {
 		        #define CUTOUT
 	        	#define pass_id 0.0
            		#define GEOMETRYPASS
-				#pragma target 5.0
-				#pragma multi_compile EDITORTIME_ON EDITORTIME_OFF
+           		#define CAM_ATTACHED
+			#pragma target 5.0
+			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
 
 //				#pragma geometry GS_Main
-				#pragma vertex tessvert
-				#pragma fragment frag
-				#pragma hull hull
-				#pragma domain domain
+			#pragma vertex tessvert
+			#pragma fragment frag
+			#pragma hull hull
+			#pragma domain domain
 
-				#pragma multi_compile_fwdadd
-				#define UNITY_PASS_FORWARDADD
-				#define Geometry_Flat_Pass
-				#include "WaterPrograms.cginc"
-				#include "HLSLSupport.cginc"
-				#include "UnityShaderVariables.cginc"
-           			#include "WaterTessellation.cginc"
+			#pragma multi_compile_fwdadd
+			#define UNITY_PASS_FORWARDADD
+			#define Geometry_Flat_Pass
+			#include "WaterPrograms.cginc"
+			#include "HLSLSupport.cginc"
+			#include "UnityShaderVariables.cginc"
+   			#include "WaterTessellation.cginc"
 				
 		        ENDCG
 			}

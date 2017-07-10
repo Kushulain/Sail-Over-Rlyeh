@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+
 #ifndef GRASS_TESSELLATION_PROGRAM_INCLUDED
 #define GRASS_TESSELLATION_PROGRAM_INCLUDED
 
@@ -22,6 +24,21 @@ struct TessVertex {
 TessVertex tessvert (appdata_simple v) {
     TessVertex o = (TessVertex)0;
     o.vertex = v.vertex;
+
+    #ifdef CAM_ATTACHED
+    float dist = length(v.vertex.xz);
+    dist /= 50.0;
+    dist = smoothstep(0.02,0.03,dist);
+
+
+    o.vertex.xz *= 20.0;
+//    o.vertex.xz +=     _WorldSpaceCameraPos.xz;
+    o.vertex.xz += lerp(_WorldSpaceCameraPos.xz,
+    floor(_WorldSpaceCameraPos.xz/10.0) * 10.0,
+    dist);
+//    o.vertex.xz = floor(o.vertex.xz/50.0) * 50.0;
+    #endif
+
     o.normal = v.normal;
 //    o.tangent = v.tangent;
 //    o.texcoord0 = v.texcoord0;
@@ -41,6 +58,8 @@ v2f vertTess (appdata_simple v) {
 //    o.normal = UnityObjectToWorldNormal(v.normal);
 //    o.posWorld = mul(_Object2World, v.vertex);
 //    o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+
+
     o.pos = (v.vertex);
     o.normal = v.normal;
     return o;
@@ -55,10 +74,50 @@ struct OutputPatchConstant {
     // I previously had other components here, but they aren't needed for this.
 };
 
+float UnityCalcEdgeTessFactorNotScreenDependant (float3 wpos0, float3 wpos1, float edgeLen)
+{
+	// distance to edge center
+	float dist = distance (0.5 * (wpos0+wpos1), _WorldSpaceCameraPos);
+	// length of the edge
+	float len = distance(wpos0, wpos1);
+	// edgeLen is approximate desired size in pixels
+	float f = max(len * 1000.0 / (edgeLen * dist), 1.0);
+	return f;
+}
+
+float4 UnityEdgeLengthBasedTessCullNotScreenDependant (float4 v0, float4 v1, float4 v2, float edgeLength, float maxDisplacement)
+{
+
+	    #ifdef CAM_ATTACHED
+	float3 pos0 = (v0).xyz;
+	float3 pos1 = (v1).xyz;
+	float3 pos2 = (v2).xyz;
+	    #else
+	float3 pos0 = mul(unity_ObjectToWorld,v0).xyz;
+	float3 pos1 = mul(unity_ObjectToWorld,v1).xyz;
+	float3 pos2 = mul(unity_ObjectToWorld,v2).xyz;
+	    #endif
+	float4 tess;
+
+	if (UnityWorldViewFrustumCull(pos0, pos1, pos2, maxDisplacement))
+	{
+		tess = 0.0f;
+	}
+	else
+	{
+		tess.x = UnityCalcEdgeTessFactorNotScreenDependant (pos1, pos2, edgeLength);
+		tess.y = UnityCalcEdgeTessFactorNotScreenDependant (pos2, pos0, edgeLength);
+		tess.z = UnityCalcEdgeTessFactorNotScreenDependant (pos0, pos1, edgeLength);
+		tess.w = (tess.x + tess.y + tess.z) / 3.0f;
+	}
+	return tess;
+}
+
 float4 Tessellation(TessVertex v, TessVertex v1, TessVertex v2){
-   
-    return UnityDistanceBasedTess(v.vertex, v1.vertex, v2.vertex, 0.0, 100.0, _Tess);
-//    return UnityEdgeLengthBasedTess(v.vertex, v1.vertex, v2.vertex, _Tess);
+
+
+//    return UnityDistanceBasedTess(v.vertex, v1.vertex, v2.vertex, 0.0, 100.0, _Tess);
+    return UnityEdgeLengthBasedTessCullNotScreenDependant(v.vertex, v1.vertex, v2.vertex, _Tess,20.0);
 //	return (_Tess);
 }
 // tessellation hull constant shader
@@ -86,7 +145,7 @@ OutputPatchConstant hullconst (InputPatch<TessVertex,3> v) {
 
 
 [domain("tri")]
-[partitioning("fractional_odd")]//fractional_odd
+[partitioning("integer")]//fractional_odd
 [outputtopology("triangle_cw")]
 [patchconstantfunc("hullconst")]
 [outputcontrolpoints(3)]
