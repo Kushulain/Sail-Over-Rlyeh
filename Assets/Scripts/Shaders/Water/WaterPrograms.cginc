@@ -148,20 +148,22 @@ v2f vert (appdata_simple v)
     float waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1)).a;
 //    waves2.xyz = waves2.xyz * 2.0 - 1.0;
     //float4 detail += tex2Dlod(_TextureB,float4(o.wPos.xz*0.145173,0.1,0.0));
-    o.binormal.y = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
-    o.binormal.y *= dist;
-    o.tangent.y = (_Waves1.w * waves1y + _Waves2.w * waves2y) - (_Waves1.w * waves1 + _Waves2.w * waves2);
-    o.tangent.y *= dist;
 
     float results =  _Waves1.w * waves1 + _Waves2.w * waves2;
     results *=  dist;
     o.wPos.y += results;
     o.pos = mul (UNITY_MATRIX_VP, o.wPos);
-//    o.pos = o.wPos;
+
+    #ifndef NO_DEPTH_OFF
+    o.binormal.y = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
+    o.binormal.y *= dist;
+    o.tangent.y = (_Waves1.w * waves1y + _Waves2.w * waves2y) - (_Waves1.w * waves1 + _Waves2.w * waves2);
+    o.tangent.y *= dist;
 
     o.tangent = normalize(o.tangent);
     o.binormal = normalize(o.binormal);
     o.normal = cross(o.tangent,o.binormal);
+    #endif
 //    o.normal = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
 
 
@@ -182,14 +184,21 @@ v2f vert (appdata_simple v)
 
 	#ifndef SHADOWS_DEPTH
 //	o._viewDir.xyz =  WorldSpaceViewDir(v.vertex);
+    	#ifndef NO_DEPTH_OFF
 	o._viewDir = float4(o.wPos.xyz - _WorldSpaceCameraPos,0);
+	#else
+//	o._viewDir = float4(_WorldSpaceCameraPos.y-o.wPos.y,0,0,0);
+//	float4 startRay = float4(i.pos.xy / _ScreenParams.xy - 0.5,0.0,1.0);
+
+	o._viewDir = float4(o.pos);
+	#endif
 
 	o.lightDir = WorldSpaceLightDir( v.vertex );  	
 //  	float3 worldN = (results.xzy);
 //    	worldN.y *= _NormalIntensity;
 //  	o.normal = normalize(worldN);
   	#endif
-	
+
     return o;
 }
 
@@ -211,7 +220,9 @@ v2f vert (appdata_simple v)
 half4 frag (v2f i) : COLOR
 {
 	#ifdef NO_DEPTH_OFF
-		return length(i._viewDir) / _ProjectionParams.z;
+		return float4(1.0-i.pos.z,0.0,0.0,1.0);
+//		return float4(i.pos.xy / _ScreenParams.xy - 0.5,0.0,1.0);
+//		return i._viewDir.x / _ProjectionParams.z;
 	#endif
 //	return float4(i.normal,1);
 	half4 texcol;

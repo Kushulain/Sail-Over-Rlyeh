@@ -49,9 +49,12 @@ public class FloatCam : MonoBehaviour {
 	public int textSize_x = 64;
 	public int textSize_y = 128;
 
+	public RenderTexture RTT;
+
 	// Use this for initialization
 	void Start () {
-//		cam.
+		//		cam.
+		RTT = new RenderTexture(textSize_x, textSize_y, 24, RenderTextureFormat.ARGBFloat);
 	}
 	
 	// Update is called once per frame
@@ -61,11 +64,10 @@ public class FloatCam : MonoBehaviour {
 		Texture2D tex = new Texture2D(textSize_x, textSize_y, TextureFormat.RGBAHalf, false);
 
 		// Initialize and render
-		RenderTexture rt = new RenderTexture(textSize_x, textSize_y, 24, RenderTextureFormat.ARGBFloat);
-		cam.targetTexture = rt;
+		cam.targetTexture = RTT;
 //		cam.ra
 		cam.Render();
-		RenderTexture.active = rt;
+		RenderTexture.active = RTT;
 
 		// Read pixels
 		tex.ReadPixels(new Rect(0,0,textSize_x,textSize_y), 0, 0);
@@ -74,8 +76,8 @@ public class FloatCam : MonoBehaviour {
 		for (int i=0; i<floatingSpots.Count; i++)
 		{
 			Color c = tex.GetPixel((int)(floatingSpots[i].position.x * textSize_x),
-				(int)(floatingSpots[i].position.y * textSize_y));
-//			Debug.Log(c.r);
+				(int)((floatingSpots[i].position.y) * textSize_y));
+			Debug.Log(c.r);
 //			Debug.Log(c.r);
 			floatingSpots[i].heightResult = 1f - c.r ;
 		}
