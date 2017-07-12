@@ -26,7 +26,7 @@ Shader ".Cat/Water" {
 
 	
 	SubShader {
-	Tags { "Queue" = "AlphaTest" "IgnoreProjector"="True" "RenderType"="TransparentCutout"}
+	Tags { "Queue" = "Geometry" "IgnoreProjector"="True" "RenderType"="Opaque"}
 	
 
 //             Pass {

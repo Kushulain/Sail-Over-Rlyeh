@@ -28,13 +28,13 @@ TessVertex tessvert (appdata_simple v) {
     #ifdef CAM_ATTACHED
     float dist = length(v.vertex.xz);
     dist /= 50.0;
-    dist = smoothstep(0.02,0.03,dist);
+    dist = smoothstep(0.01,0.03,dist);
 
 
     o.vertex.xz *= 20.0;
 //    o.vertex.xz +=     _WorldSpaceCameraPos.xz;
     o.vertex.xz += lerp(_WorldSpaceCameraPos.xz,
-    floor(_WorldSpaceCameraPos.xz/10.0) * 10.0,
+    floor(_WorldSpaceCameraPos.xz/5.0) * 5.0,
     dist);
 //    o.vertex.xz = floor(o.vertex.xz/50.0) * 50.0;
     #endif
