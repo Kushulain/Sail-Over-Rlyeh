@@ -16,7 +16,7 @@ CGINCLUDE
 // leading to possible shadow artifacts. So it's disabled by default.
 #define UNITY_USE_RECEIVER_PLANE_BIAS 0
 #define UNITY_RECEIVER_PLANE_MIN_FRACTIONAL_ERROR 0.05f
-#define VOLUMETRIC_SHADOW 20
+#define VOLUMETRIC_SHADOW 18
 #define VOLUMETRIC_SHADOW_HEIGHT 8.0
 
 
@@ -370,6 +370,8 @@ half unity_sampleShadowmap( float4 coord )
 	return shadow;
 }
 
+
+
 /**
  *	Hard shadow 
  */
@@ -460,6 +462,14 @@ fixed4 frag_hard (v2f i) : SV_Target
 //	return shadow;
 //}
 
+//Texture2D SMtest : register(t15);
+//SamplerState sampler_ShadowMapTexture2  : register(s16);
+//{
+//    Filter = MIN_MAG_MIP_LINEAR;
+//    AddressU = Wrap;
+//    AddressV = Wrap;
+//};
+
 fixed4 frag_pcf5x5(v2f i) : SV_Target
 {
 	float3 vpos = computeCameraSpacePosFromDepth(i);
@@ -536,26 +546,55 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 	//	}
 	//
 
-	float minStepDist = 1.0;
+	float minStepDist = 0.05;
 	lengthDir = length(dir.xyz);
 	float stepCount =  min(lengthDir, (VOLUMETRIC_SHADOW*minStepDist)) / minStepDist;
+	float sampleSum = 0.0;
+	float sampleProcessed = 1.0;
 
 	for (int i=0; i<stepCount; i++)
 	{
 	 	float3 stepVPos = vpos * (1.0*i/stepCount);
 
-//		float4 lwpos = mul (unity_CameraToWorld, float4(stepVPos,1));
 		float4 lwpos = lerp(start,start+dir,(1.0*i/stepCount));
 		lwpos.w = 1.0;
 
 	 	float weight = pow(1.0-(lwpos.y / VOLUMETRIC_SHADOW_HEIGHT),1.0);
 		fixed4 cascadeWeights = GET_CASCADE_WEIGHTS (lwpos, stepVPos.z);
-//		volumeShadow += unity_sampleShadowmap( GET_SHADOW_COORDINATES(wpos, cascadeWeights) );
-		volumeShadow += weight * max(0.4,unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) ));
-//		volumeShadow += 0.2* (1.0-volumeShadow)*unity_sampleShadowmap( GET_SHADOW_COORDINATES(wpos, cascadeWeights) ) * (1/max(1,wpos.y ));
-
+		float sample = unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) );
+		sampleSum += sample;
+		volumeShadow += weight * max(0.4,sample);
 	}
-	volumeShadow /= stepCount;
+//	volumeShadow /= stepCount;
+	sampleSum /= stepCount;
+
+	if (sampleSum < 0.99 && sampleSum > 0.1)
+	{
+	 	sampleProcessed += 1;
+		start.xyz += (dir.xyz/(stepCount*2.0));
+		for (int i=0; i<stepCount; i++)
+		{
+		 	float3 stepVPos = vpos * (1.0*i/stepCount);
+
+			float4 lwpos = lerp(start,start+dir,(1.0*i/stepCount));
+			lwpos.w = 1.0;
+
+		 	float weight = pow(1.0-(lwpos.y / VOLUMETRIC_SHADOW_HEIGHT),1.0);
+			fixed4 cascadeWeights = GET_CASCADE_WEIGHTS (lwpos, stepVPos.z);
+			float sample = unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) );
+			sampleSum += sample;
+			volumeShadow += weight * max(0.4,sample);
+
+		}
+		volumeShadow /= stepCount*2.0;
+	}
+	else
+	{
+		volumeShadow /= stepCount;
+	}
+
+//	return sampleProcessed*0.5;
+
 	volumeShadow *= clamp(lengthDir/200.0,0.3,1.0) * 10.0;
 	volumeShadow *= min(1.0,(_WorldSpaceCameraPos.y/VOLUMETRIC_SHADOW_HEIGHT));
 //	volumeShadow = stepCount/VOLUMETRIC_SHADOW;
@@ -571,6 +610,9 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 //	return float4(shadow * 0.02 + pow(volumeShadow  * 0.01 ,0.5) * 20.0 * clamp(length(vpos)/100.0,1.5,2.0) - 2.0,
 //	0.0,0.0,1.0) ;
 
+	float4 mapSSSCoord = GET_SHADOW_COORDINATES(wpos, cascadeWeights);
+//	float diff = _ShadowMapTexture.Sample(sampler_ShadowMapTexture2,(mapSSSCoord).xy);
+
 //	return pow(volumeShadow,1.0) * 0.8;
 	return float4(shadow,
 //		volumeShadow * 5.0 -  VOLUMETRIC_SHADOW * 0.5,
@@ -578,7 +620,12 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 //	 pow(volumeShadow * 1.5 ,3.0) * 0.8 * clamp(length(vpos)/100.0,0.5,1.0),
 	 pow(volumeShadow,1.0) * 0.8,
 //	 length(dir)/VOLUMETRIC_SHADOW_HEIGHT,
-	 length(vpos) / 50.0,1.0) ;
+	 length(vpos) / 50.0,
+//	 tex2Dproj( _ShadowMapTexture, UNITY_PROJ_COORD(GET_SHADOW_COORDINATES(wpos, cascadeWeights)) ).r);
+//	 UNITY_SAMPLE_SHADOW(_ShadowMapTexture,GET_SHADOW_COORDINATES(wpos, cascadeWeights))* 0.5)  ;
+		0.0);
+//		_ShadowMapTexture.SampleCmp (sampler_ShadowMapTexture,(mapSSSCoord).xy,(mapSSSCoord).z) * 0.5);
+//	 tex2Dproj(_ShadowMapTexture,mapSSSCoord))  ;
 }
 ENDCG
 
