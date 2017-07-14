@@ -77,7 +77,7 @@ public class FloatCam : MonoBehaviour {
 		{
 			Color c = tex.GetPixel((int)(floatingSpots[i].position.x * textSize_x),
 				(int)((floatingSpots[i].position.y) * textSize_y));
-			Debug.Log(c.r);
+//			Debug.Log(c.r);
 //			Debug.Log(c.r);
 			floatingSpots[i].heightResult = 1f - c.r ;
 		}

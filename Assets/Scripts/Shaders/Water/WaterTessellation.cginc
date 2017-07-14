@@ -61,7 +61,7 @@ v2f vertTess (appdata_simple v) {
 
 
     o.pos = (v.vertex);
-    o.normal = v.normal;
+    o.normal = float4(v.normal,0.0);
     return o;
 }
 //struct UnityTessellationFactors {

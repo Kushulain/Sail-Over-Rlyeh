@@ -109,6 +109,7 @@
 				// sample the texture
 				fixed4 col = _Color;
 				#if defined (DIRECTIONAL) && defined (SHADOWS_SCREEN) && !defined(UNITY_NO_SCREENSPACE_SHADOWS)
+//				return tex2Dproj( _ShadowMapTexture, UNITY_PROJ_COORD(i._ShadowCoord) ).a;
 				 fixed2 firstAtten = tex2Dproj( _ShadowMapTexture, UNITY_PROJ_COORD(i._ShadowCoord) ).gb;
 				 blurDirection *= saturate(1.0 - firstAtten.y );
 				 fixed atten = tex2Dproj( _ShadowMapTexture, UNITY_PROJ_COORD(i._ShadowCoord+blurDirection) ).g;

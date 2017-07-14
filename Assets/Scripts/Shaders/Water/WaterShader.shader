@@ -4,6 +4,7 @@ Shader ".Cat/Water" {
 		_Color ("Main Color", Color) = (1,1,1,1)
 		_ZColor ("Zenith Color", Color) = (1,1,1,1)
 		_HColor ("horizon Color", Color) = (1,1,1,1)
+		_SSSColor ("SSS Color", Color) = (1,1,1,1)
 		_TextureA ("diffuse", 2D) = "white" { }
 		_TextureB ("random", 2D) = "white" { }
 		_TextureC ("detai", 2D) = "white" { }

@@ -40,6 +40,7 @@ float _windRandomness;
 float4 _Color;
 float4 _HColor;
 float4 _ZColor;
+float4 _SSSColor;
 float4 _Waves1;
 float4 _Waves2;
 float4 _Waves3;
@@ -59,7 +60,7 @@ struct v2f {
     #endif
     float4 wPos : TEXCOORD0;
 //    float4 uv2 : TEXCOORD1;
-    fixed3 normal : NORMAL;
+    fixed4 normal : NORMAL;
     fixed3 tangent : TANGENT;
     fixed3 binormal : TEXCOORD1 ;
     //float3 alphaMulti : TEXCOORD2;
@@ -134,35 +135,39 @@ v2f vert (appdata_simple v)
     dist = (1.0-smoothstep(_ClippingStart,_ClippingEnd,dist));
     dist *= dist * dist;
 
-    float minTess = 0.1;
+    float minTess = 1.0;
     o.binormal.x = minTess;
     o.tangent.z = minTess;
 
 
-    float waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1)).a;
-    float waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1)).a;
-    float waves1y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1)).a;
+    float4 waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1));
+    float4 waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1));
+    float4 waves1y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1));
 //    waves1.xyz = waves1.xyz * 2.0 - 1.0;
-    float waves2 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1)).a;
-    float waves2x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1)).a;
-    float waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1)).a;
+    float4 waves2 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1));
+    float4 waves2x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1));
+    float4 waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1));
 //    waves2.xyz = waves2.xyz * 2.0 - 1.0;
     //float4 detail += tex2Dlod(_TextureB,float4(o.wPos.xz*0.145173,0.1,0.0));
 
-    float results =  _Waves1.w * waves1 + _Waves2.w * waves2;
+    float results =  _Waves1.w * waves1.a + _Waves2.w * waves2.a;
 //    results *=  dist;
     o.wPos.y += results;
     o.pos = mul (UNITY_MATRIX_VP, o.wPos);
 
     #ifndef NO_DEPTH_OFF
-    o.binormal.y = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
+    o.binormal.y = (_Waves1.w * waves1x.a + _Waves2.w * waves2x.a) - (_Waves1.w * waves1.a + _Waves2.w * waves2.a);
     o.binormal.y *= dist;
-    o.tangent.y = (_Waves1.w * waves1y + _Waves2.w * waves2y) - (_Waves1.w * waves1 + _Waves2.w * waves2);
+    o.tangent.y = (_Waves1.w * waves1y.a + _Waves2.w * waves2y.a) - (_Waves1.w * waves1.a + _Waves2.w * waves2.a);
     o.tangent.y *= dist;
 
+    float curvature = abs(waves1x.x - waves1.x)*_Waves1.w* waves1.a + abs(waves2x.x - waves2.x)*_Waves2.w * waves2.a;
+    curvature = max(abs(curvature),abs(waves1y.y - waves1.y)*_Waves1.w* waves1.a + abs(waves2y.y - waves2.y)*_Waves2.w * waves2.a);
+//    float curvature = 10.0 * abs(length(waves2x.xyz - waves2.xyz));
+//    float curvature = (waves2x.w);
     o.tangent = normalize(o.tangent);
     o.binormal = normalize(o.binormal);
-    o.normal = cross(o.tangent,o.binormal);
+    o.normal = float4(cross(o.tangent,o.binormal),curvature);
     #endif
 //    o.normal = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
 
@@ -248,7 +253,7 @@ half4 frag (v2f i) : COLOR
 	float3x3 tangentSpace = float3x3(
 	    i.binormal, // +90 degree rotation around y axis
 	    i.tangent, // -90 degree rotation around x axis
-	    i.normal);
+	    i.normal.xyz);
 
 	
 
@@ -257,7 +262,7 @@ half4 frag (v2f i) : COLOR
 //	float4 results =  _Waves1.w * waves1 + _Waves2.w * waves2 + _Waves3.w * waves3;
 //	results += waves3 *  _Waves3.w;
 //	results += waves4 *  _Waves4.w;
-	float3 fragNormal = lerp(mul(tangentSpace, results),i.normal,1.0/(1+_Waves4.w + _Waves3.w));//(results.xzy);
+	float3 fragNormal = lerp(mul(tangentSpace, results),i.normal.xyz,1.0/(1+_Waves4.w + _Waves3.w));//(results.xzy);
 //	fragNormal.y += _NormalIntensity + dist * 33.0;
 	fragNormal = normalize(fragNormal) ;
 
@@ -275,6 +280,7 @@ half4 frag (v2f i) : COLOR
 	foam = tex2D(_Foam,float2(i.wPos.xz * 0.5))*(foam);
 	foam *= foam;
 	foam *= tex2D(_Foam,float2(i.wPos.xz * 2.0));
+	foam *= i.normal.w ;
 //	return float4(fragNormal.xyz*0.5 + 0.5,1.0);
 
 //    return 0.5
@@ -359,6 +365,9 @@ half4 frag (v2f i) : COLOR
 //    return float4(dot1+dot2,dot1+dot2,dot1+dot2,1.0);
 //  	return float4(dot2,dot2,dot2,1.0);
     texcol.rgb +=  0.8 * atten * dot2 * _LightColor0.rgb;
+
+    texcol.rgb += atten * i.normal.w * _SSSColor.rgb * (clamp(i._viewDir.y * 0.2 + 5.0,0.5,1.0));
+//	return *0.2;
 
 //    return float4(i.normal*0.5+0.5,1.0);
 //  	float dot3 = pow(DOT_TO_RIM(dot(i.normal,normalize(lightDir*2+i._viewDir.xyz*0.5)),0),40);
