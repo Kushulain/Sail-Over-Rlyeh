@@ -34,7 +34,7 @@ public class Boat : MonoBehaviour {
 			Vector3 pos = floatCam.floatingSpots[i].GetPosition(floatCam);
 			float force = floatCam.floatingSpots[i].Get(rigidb.GetPointVelocity(pos),transform);
 			Debug.DrawLine(Vector3.zero, pos, Color.white, 1f);
-			rigidb.AddForceAtPosition(transform.up * force,pos);
+			rigidb.AddForceAtPosition(transform.up * force,pos,ForceMode.Acceleration);
 			Debug.DrawLine(pos, pos + transform.up * force * 0.001f, Color.red, 1f);
 		}
 
