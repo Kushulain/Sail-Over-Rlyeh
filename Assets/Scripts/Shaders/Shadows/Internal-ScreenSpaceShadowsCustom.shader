@@ -17,7 +17,7 @@ CGINCLUDE
 #define UNITY_USE_RECEIVER_PLANE_BIAS 0
 #define UNITY_RECEIVER_PLANE_MIN_FRACTIONAL_ERROR 0.05f
 #define VOLUMETRIC_SHADOW 20
-#define VOLUMETRIC_SHADOW_HEIGHT 2.0
+#define VOLUMETRIC_SHADOW_HEIGHT 8.0
 
 
 // Blend between shadow cascades to hide the transition seams?
@@ -502,6 +502,7 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 
 	float4 start = float4(_WorldSpaceCameraPos,1.0);
 	float4 dir = float4(wpos-_WorldSpaceCameraPos,1.0);
+	float lengthDir = 1.0;
 
 	if ((start.y > VOLUMETRIC_SHADOW_HEIGHT && (start.y+dir.y) < VOLUMETRIC_SHADOW_HEIGHT)
 	|| start.y < VOLUMETRIC_SHADOW_HEIGHT)
@@ -535,41 +536,47 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 	//	}
 	//
 
+	float minStepDist = 1.0;
+	lengthDir = length(dir.xyz);
+	float stepCount =  min(lengthDir, (VOLUMETRIC_SHADOW*minStepDist)) / minStepDist;
 
-		for (int i=0; i<VOLUMETRIC_SHADOW; i++)
-		{
-		 	float3 stepVPos = vpos * (1.0*i/VOLUMETRIC_SHADOW);
+	for (int i=0; i<stepCount; i++)
+	{
+	 	float3 stepVPos = vpos * (1.0*i/stepCount);
 
-	//		float4 lwpos = mul (unity_CameraToWorld, float4(stepVPos,1));
-			float4 lwpos = lerp(start,start+dir,(1.0*i/VOLUMETRIC_SHADOW));
-			lwpos.w = 1.0;
+//		float4 lwpos = mul (unity_CameraToWorld, float4(stepVPos,1));
+		float4 lwpos = lerp(start,start+dir,(1.0*i/stepCount));
+		lwpos.w = 1.0;
 
-		 	float weight = pow(1.0-(lwpos.y / VOLUMETRIC_SHADOW_HEIGHT),1.0);
-			fixed4 cascadeWeights = GET_CASCADE_WEIGHTS (lwpos, stepVPos.z);
-	//		volumeShadow += unity_sampleShadowmap( GET_SHADOW_COORDINATES(wpos, cascadeWeights) );
-			volumeShadow += weight * max(0.4,unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) ));
-	//		volumeShadow += 0.2* (1.0-volumeShadow)*unity_sampleShadowmap( GET_SHADOW_COORDINATES(wpos, cascadeWeights) ) * (1/max(1,wpos.y ));
+	 	float weight = pow(1.0-(lwpos.y / VOLUMETRIC_SHADOW_HEIGHT),1.0);
+		fixed4 cascadeWeights = GET_CASCADE_WEIGHTS (lwpos, stepVPos.z);
+//		volumeShadow += unity_sampleShadowmap( GET_SHADOW_COORDINATES(wpos, cascadeWeights) );
+		volumeShadow += weight * max(0.4,unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) ));
+//		volumeShadow += 0.2* (1.0-volumeShadow)*unity_sampleShadowmap( GET_SHADOW_COORDINATES(wpos, cascadeWeights) ) * (1/max(1,wpos.y ));
 
-		}
+	}
+	volumeShadow /= stepCount;
+	volumeShadow *= clamp(lengthDir/200.0,0.3,1.0) * 10.0;
+	volumeShadow *= min(1.0,(_WorldSpaceCameraPos.y/VOLUMETRIC_SHADOW_HEIGHT));
+//	volumeShadow = stepCount/VOLUMETRIC_SHADOW;
 	}
 	else
 	{
 		dir*= 0.0;
 	}
 	dir.w = 0.0;
-	volumeShadow /= VOLUMETRIC_SHADOW;
-	volumeShadow *= clamp(length(dir)/200.0,0.3,1.0) * 10.0;
-	volumeShadow *= min(1.0,(_WorldSpaceCameraPos.y/VOLUMETRIC_SHADOW_HEIGHT));
 	//shadow * 0.02 + 
 //	return volumeShadow  * 0.001 * length(vpos) * 0.8;
 //	return float4(shadow * 0.02 + pow(volumeShadow  * 0.01 ,0.9) * 20.0 * clamp(length(vpos)/100.0,1.5,2.0),
 //	return float4(shadow * 0.02 + pow(volumeShadow  * 0.01 ,0.5) * 20.0 * clamp(length(vpos)/100.0,1.5,2.0) - 2.0,
 //	0.0,0.0,1.0) ;
+
+//	return pow(volumeShadow,1.0) * 0.8;
 	return float4(shadow,
 //		volumeShadow * 5.0 -  VOLUMETRIC_SHADOW * 0.5,
 //	 pow(volumeShadow  * 0.01 ,0.9) * 20.0 * clamp(length(vpos)/100.0,1.5,2.0),
 //	 pow(volumeShadow * 1.5 ,3.0) * 0.8 * clamp(length(vpos)/100.0,0.5,1.0),
-	 pow(volumeShadow,1.0) * 1.2,
+	 pow(volumeShadow,1.0) * 0.8,
 //	 length(dir)/VOLUMETRIC_SHADOW_HEIGHT,
 	 length(vpos) / 50.0,1.0) ;
 }

@@ -150,7 +150,7 @@ v2f vert (appdata_simple v)
     //float4 detail += tex2Dlod(_TextureB,float4(o.wPos.xz*0.145173,0.1,0.0));
 
     float results =  _Waves1.w * waves1 + _Waves2.w * waves2;
-    results *=  dist;
+//    results *=  dist;
     o.wPos.y += results;
     o.pos = mul (UNITY_MATRIX_VP, o.wPos);
 
