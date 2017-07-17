@@ -14,7 +14,7 @@ public class LevelManager : MonoBehaviour {
 	public RenderTexture depthTexture;
 	public bool renderTextureEnabled = true;
 	public RenderTexture renderTexture;
-	public Renderer water;
+	public Renderer[] water;
 	public Shader depthShader;
 
 	// Use this for initialization
@@ -27,8 +27,11 @@ public class LevelManager : MonoBehaviour {
 
 		if (depthTextureEnabled)
 		{
-			water.material.SetTexture("_Depth",depthTexture);
-			water.material.SetTexture("_Render",renderTexture);
+			foreach (Renderer rend in water)
+			{
+				rend.sharedMaterial.SetTexture("_Depth",depthTexture);
+				rend.sharedMaterial.SetTexture("_Render",renderTexture);
+			}
 			//DepthCam.depthTextureMode = DepthTextureMode.
 		}
 	}
@@ -50,13 +53,19 @@ public class LevelManager : MonoBehaviour {
 //			renderTexture.height = MainCam.pixelHeight;
 			depthTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGBFloat);
 			renderTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGB32);
-			water.material.SetTexture("_Depth",depthTexture);
-			water.material.SetTexture("_Render",renderTexture);
+			foreach (Renderer rend in water)
+			{
+				rend.sharedMaterial.SetTexture("_Depth",depthTexture);
+				rend.sharedMaterial.SetTexture("_Render",renderTexture);
+			}
 		}
 
 //		Texture2D tex = new Texture2D(textSize_x, textSize_y, TextureFormat.RGBAHalf, false);
 
 		Vector3 colorClear = DepthCam.transform.forward;
+//		colorClear.x = colorClear.x > 0f ? 1f: -1f;
+//		colorClear.y = colorClear.y > 0f ? 1f: -1f;
+//		colorClear.z = colorClear.z > 0f ? 1f: -1f;
 		colorClear = colorClear * 0.5f + Vector3.one * 0.5f;
 
 		// Initialize and render

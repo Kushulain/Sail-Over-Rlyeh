@@ -6,10 +6,39 @@ ModelImporter:
   serializedVersion: 19
   fileIDToRecycleName:
     100000: //RootNode
+    100002: Grid
+    100004: Grid_001
+    100006: Grid_002
+    100008: Grid_003
+    100010: Grid_004
+    100012: Grid_005
     400000: //RootNode
+    400002: Grid
+    400004: Grid_001
+    400006: Grid_002
+    400008: Grid_003
+    400010: Grid_004
+    400012: Grid_005
     2300000: //RootNode
+    2300002: Grid
+    2300004: Grid_001
+    2300006: Grid_002
+    2300008: Grid_003
+    2300010: Grid_004
+    2300012: Grid_005
     3300000: //RootNode
+    3300002: Grid
+    3300004: Grid_001
+    3300006: Grid_002
+    3300008: Grid_003
+    3300010: Grid_004
+    3300012: Grid_005
     4300000: Grid
+    4300002: Grid_005
+    4300004: Grid_004
+    4300006: Grid_003
+    4300008: Grid_002
+    4300010: Grid_001
     7400000: Default Take
     9500000: //RootNode
   materials:
@@ -71,10 +100,10 @@ ModelImporter:
     rootMotionBoneName: 
     rootMotionBoneRotation: {x: 0, y: 0, z: 0, w: 1}
     hasTranslationDoF: 0
-    hasExtraRoot: 0
+    hasExtraRoot: 1
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
-  animationType: 2
+  animationType: 0
   humanoidOversampling: 1
   additionalBone: 0
   userData: 

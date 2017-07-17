@@ -26,7 +26,7 @@ CGPROGRAM
 	}
 	 
 	half4 frag(v2f i) : COLOR {
-		return i.wposDepth / 500.0 + 0.5;
+		return i.wposDepth / 1000.0 + 0.5;
 //	    UNITY_OUTPUT_DEPTH(i.depth);
 	}
 ENDCG

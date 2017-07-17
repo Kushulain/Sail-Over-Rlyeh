@@ -17,7 +17,7 @@ CGINCLUDE
 #define UNITY_USE_RECEIVER_PLANE_BIAS 0
 #define UNITY_RECEIVER_PLANE_MIN_FRACTIONAL_ERROR 0.05f
 #define VOLUMETRIC_SHADOW 18
-#define VOLUMETRIC_SHADOW_HEIGHT 5.0
+#define VOLUMETRIC_SHADOW_HEIGHT 3.0
 
 
 // Blend between shadow cascades to hide the transition seams?

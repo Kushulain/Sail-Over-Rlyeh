@@ -25,13 +25,15 @@ TessVertex tessvert (appdata_simple v) {
     TessVertex o = (TessVertex)0;
     o.vertex = v.vertex;
 
-    #ifdef CAM_ATTACHED
+
+    #ifdef CAM_ATTACHED_ON
     float dist = length(v.vertex.xz);
     dist /= 50.0;
     dist = smoothstep(0.01,0.03,dist);
 
 
-    o.vertex.xz *= 20.0;
+    o.vertex.xz *= length(unity_ObjectToWorld[0].xyz);
+//    o.vertex.xz *= 20.0;
 //    o.vertex.xz +=     _WorldSpaceCameraPos.xz;
     o.vertex.xz += lerp(_WorldSpaceCameraPos.xz,
     floor(_WorldSpaceCameraPos.xz/5.0) * 5.0,
@@ -88,7 +90,7 @@ float UnityCalcEdgeTessFactorNotScreenDependant (float3 wpos0, float3 wpos1, flo
 float4 UnityEdgeLengthBasedTessCullNotScreenDependant (float4 v0, float4 v1, float4 v2, float edgeLength, float maxDisplacement)
 {
 
-	    #ifdef CAM_ATTACHED
+	    #ifdef CAM_ATTACHED_ON
 	float3 pos0 = (v0).xyz;
 	float3 pos1 = (v1).xyz;
 	float3 pos2 = (v2).xyz;

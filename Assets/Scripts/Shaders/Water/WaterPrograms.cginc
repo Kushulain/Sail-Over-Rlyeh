@@ -128,7 +128,7 @@ fixed4 ComputeScreenPosTEST (float4 pos)
 v2f vert (appdata_simple v)
 {
     v2f o = (v2f)0;
-    #ifdef CAM_ATTACHED
+    #ifdef CAM_ATTACHED_ON
     o.wPos = v.vertex;
     #else
     o.wPos = mul (unity_ObjectToWorld, v.vertex);
@@ -173,9 +173,9 @@ v2f vert (appdata_simple v)
 
     #ifndef NO_DEPTH_OFF
     o.binormal.y = (_Waves1.w * waves1x.a + _Waves2.w * waves2x.a) - (_Waves1.w * waves1.a + _Waves2.w * waves2.a);
-    o.binormal.y *= dist;
+//    o.binormal.y *= dist;
     o.tangent.y = (_Waves1.w * waves1y.a + _Waves2.w * waves2y.a) - (_Waves1.w * waves1.a + _Waves2.w * waves2.a);
-    o.tangent.y *= dist;
+//    o.tangent.y *= dist;
 
 //    float curvature = 10.0 * abs(length(waves2x.xyz - waves2.xyz));
 //    float curvature = (waves2x.w);
@@ -245,7 +245,8 @@ half4 frag (v2f i) : COLOR
 	#endif
 //	return float4(i.normal,1);
 	half4 texcol;
-	float dist = (smoothstep(_ClippingStart,_ClippingEnd,length(i._viewDir.xyz)));
+	float realDist = length(i._viewDir.xyz);
+	float dist = (smoothstep(_ClippingStart,_ClippingEnd,realDist));
 
 
 
@@ -397,53 +398,60 @@ half4 frag (v2f i) : COLOR
 	#define REFLECTION 
 
 	#ifdef REFLECTION
-
-	float2 uvcreen = i.pos.xy / float2(_ScreenParams.x,-_ScreenParams.y) + float2(0.0,1.0);
-	float3 normalView = mul((float3x3)UNITY_MATRIX_V, i.normal.xyz - float3(0,1.0,0));
-	float2 offsetuv = 0.1*  normalView.xy;
-
-	float4 depth = tex2D(_Depth,uvcreen + offsetuv);
-	depth -= 0.5;
-	depth *= 500.0;
-
-	float subSurfaceRayDist = dot(viewDirN,(depth.xyz-i.wPos.xyz)) * 0.2;
-
-//	return float4(length(depth.xyz * 0.001),0.0,0.0,1.0);
-//	return float4(length(depth.xyz * 0.001),0.0,0.0,1.0);
-//	return float4(subSurfaceRayDist,0.0,0.0,1.0);
-	subSurfaceRayDist = saturate(subSurfaceRayDist);
-
-	float4 render;
-	if (subSurfaceRayDist > 0 && subSurfaceRayDist < 1.0)
+	if (realDist < 300.0)
 	{
-		render = tex2D(_Render,uvcreen + offsetuv*subSurfaceRayDist);
-		depth = tex2D(_Depth,uvcreen + offsetuv*subSurfaceRayDist);
+
+		float2 uvcreen = i.pos.xy / float2(_ScreenParams.x,-_ScreenParams.y) + float2(0.0,1.0);
+		float3 normalView = mul((float3x3)UNITY_MATRIX_V, i.normal.xyz - float3(0,1.0,0));
+		float2 offsetuv = 0.1*  normalView.xy;
+
+		float4 depth = tex2D(_Depth,uvcreen + offsetuv);
 		depth -= 0.5;
-		depth *= 500.0;
-	}
-	else
-	{
-		render = tex2D(_Render,uvcreen);
-		depth = tex2D(_Depth,uvcreen);
-		depth -= 0.5;
-		depth *= 500.0;
-	}
+		depth *= 1000.0;
+
+		float subSurfaceRayDist = dot(viewDirN,(depth.xyz-i.wPos.xyz)) * 0.2;
+
+	//	return float4(length(depth.xyz * 0.001),0.0,0.0,1.0);
+	//	return float4(length(depth.xyz * 0.001),0.0,0.0,1.0);
+//		return float4(subSurfaceRayDist,0.0,0.0,1.0);
+		subSurfaceRayDist = saturate(subSurfaceRayDist);
+
+		float4 render;
+		if (subSurfaceRayDist > 0 && subSurfaceRayDist < 1.0)
+		{
+			render = tex2D(_Render,uvcreen + offsetuv*subSurfaceRayDist);
+			depth = tex2D(_Depth,uvcreen + offsetuv*subSurfaceRayDist);
+			depth -= 0.5;
+			depth *= 1000.0;
+		}
+		else
+		{
+			render = tex2D(_Render,uvcreen);
+			depth = tex2D(_Depth,uvcreen);
+			depth -= 0.5;
+			depth *= 1000.0;
+		}
 
 
-	subSurfaceRayDist = dot(viewDirN,(depth.xyz-i.wPos.xyz)) * 0.2;
-//	return render;
-//	return render;
-	subSurfaceRayDist = pow(saturate(subSurfaceRayDist),0.5);
-	render.rgb = lerp(render.rgb,
-						_SSSColor.rgb,
-						subSurfaceRayDist);
-	texcol.rgb = lerp(render.rgb
-						,texcol.rgb,
-						subSurfaceRayDist);
+		subSurfaceRayDist = dot(viewDirN,(depth.xyz-i.wPos.xyz)) * 0.2;
+	//	return render;
+	//	return render;
+		subSurfaceRayDist = pow(saturate(subSurfaceRayDist),0.5);
+		render.rgb = lerp(render.rgb,
+							_SSSColor.rgb,
+							subSurfaceRayDist);
+		texcol.rgb = lerp(render.rgb
+							,texcol.rgb,
+							subSurfaceRayDist);
+	}
+
+//	texcol.rgb = lerp(texcol.rgb,_HColor.rgb,realDist);
+//	texcol.a = realDist;
 
 //	return float4(subSurfaceRayDist,0.0,0.0,1.0) ;
 	#endif
 
+	texcol.rgb = lerp(texcol.rgb,float3(1.0,1.0,0.85),pow(realDist * 0.001,0.4));
 //	texcol = lerp(texcol,float4(1,1,1,1), max(0.0,atten  - 0.0));
     return texcol;
 }

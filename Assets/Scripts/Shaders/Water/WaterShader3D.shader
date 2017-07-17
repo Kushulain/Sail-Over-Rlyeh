@@ -1,4 +1,4 @@
-Shader ".Cat/Water" {
+Shader ".Cat/Water3D" {
 	Properties {
 		_Cube ("Reflection Map", Cube) = "" {}
 		_Color ("Main Color", Color) = (1,1,1,1)
@@ -72,9 +72,9 @@ Shader ".Cat/Water" {
 		        #define CUTOUT
 	        	#define pass_id 0.0
            		#define GEOMETRYPASS
+//           		#define CAM_ATTACHED
 			#pragma target 5.0
 			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
-			#pragma multi_compile CAM_ATTACHED_ON CAM_ATTACHED_OFF
 
 			#pragma exclude_renderers gles
 //				#pragma geometry GS_Main
@@ -116,10 +116,10 @@ Shader ".Cat/Water" {
 		        #define CUTOUT
 	        	#define pass_id 0.0
            		#define GEOMETRYPASS
+//           		#define CAM_ATTACHED
 			#define Geometry_Flat_Pass
 			#pragma target 5.0
 			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
-			#pragma multi_compile CAM_ATTACHED_ON CAM_ATTACHED_OFF
 
 //				#pragma geometry GS_Main
 			#pragma vertex tessvert
@@ -160,9 +160,9 @@ Shader ".Cat/Water" {
 		        #define CUTOUT
 	        	#define pass_id 0.0
            		#define GEOMETRYPASS
+//           		#define CAM_ATTACHED
 			#pragma target 5.0
 			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
-			#pragma multi_compile CAM_ATTACHED_ON CAM_ATTACHED_OFF
 
 //				#pragma geometry GS_Main
 			#pragma vertex tessvert

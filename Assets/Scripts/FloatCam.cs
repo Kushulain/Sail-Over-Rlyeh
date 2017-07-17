@@ -61,6 +61,8 @@ public class FloatCam : MonoBehaviour {
 	void Update () {
 		Shader.EnableKeyword("NO_DEPTH_OFF");
 		Shader.DisableKeyword("NO_DEPTH_ON");
+		Shader.EnableKeyword("CAM_ATTACHED_OFF");
+		Shader.DisableKeyword("CAM_ATTACHED_ON");
 		Texture2D tex = new Texture2D(textSize_x, textSize_y, TextureFormat.RGBAHalf, false);
 
 		// Initialize and render
@@ -88,6 +90,8 @@ public class FloatCam : MonoBehaviour {
 		//		DestroyImmediate(rt);
 		Shader.EnableKeyword("NO_DEPTH_ON");
 		Shader.DisableKeyword("NO_DEPTH_OFF");
+		Shader.EnableKeyword("CAM_ATTACHED_ON");
+		Shader.DisableKeyword("CAM_ATTACHED_OFF");
 
 	}
 }
