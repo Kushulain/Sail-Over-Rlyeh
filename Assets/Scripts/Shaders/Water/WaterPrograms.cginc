@@ -28,6 +28,8 @@
 #include "Lighting.cginc"
             
 sampler2D _TextureA;
+sampler2D _Depth;
+sampler2D _Render;
 
 sampler2D _TextureB;
 sampler2D _TextureC;
@@ -36,6 +38,7 @@ sampler2D _Foam;
 float4 _TextureA_ST;
 float4 _TextureB_ST;
 float4 _windDirection;
+float4 _currentDirection;
 float _windRandomness;
 float4 _Color;
 float4 _HColor;
@@ -59,7 +62,8 @@ struct v2f {
     float4 pos : POSITION;
     #endif
     float4 wPos : TEXCOORD0;
-//    float4 uv2 : TEXCOORD1;
+    float4 uv : TEXCOORD2;
+
     fixed4 normal : NORMAL;
     fixed3 tangent : TANGENT;
     fixed3 binormal : TEXCOORD1 ;
@@ -139,21 +143,33 @@ v2f vert (appdata_simple v)
     o.binormal.x = minTess;
     o.tangent.z = minTess;
 
+    float2 stretch = float2(4.0,1.0);
 
-    float4 waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1));
-    float4 waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1));
-    float4 waves1y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves1.zz * float2(2.0,1.0) + _Time.xx * _Waves1.xy,1,1));
+    float4 waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
+    float4 waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
+    float4 waves1y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
 //    waves1.xyz = waves1.xyz * 2.0 - 1.0;
-    float4 waves2 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1));
-    float4 waves2x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1));
-    float4 waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz * float2(2.0,1.0) + _Time.xx * _Waves2.xy,1,1));
+    float4 waves2 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves2.zz * stretch + _Time.xx * _Waves2.xy,1,1));
+    float4 waves2x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves2.zz * stretch + _Time.xx * _Waves2.xy,1,1));
+    float4 waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz * stretch + _Time.xx * _Waves2.xy,1,1));
 //    waves2.xyz = waves2.xyz * 2.0 - 1.0;
     //float4 detail += tex2Dlod(_TextureB,float4(o.wPos.xz*0.145173,0.1,0.0));
+    float curvature = abs(waves1x.x - waves1.x)*_Waves1.w* waves1.a + abs(waves2x.x - waves2.x)*_Waves2.w * waves2.a;
+    curvature = max(abs(curvature),abs(waves1y.y - waves1.y)*_Waves1.w* waves1.a + abs(waves2y.y - waves2.y)*_Waves2.w * waves2.a);
 
     float results =  _Waves1.w * waves1.a + _Waves2.w * waves2.a;
+
 //    results *=  dist;
     o.wPos.y += results;
+
+    o.uv = float4(o.wPos.xyz,1.0);
+
+    o.wPos.y += curvature * 0.1 ;
+//    o.wPos.x += curvature * 0.1;
+    o.wPos.x += (results*0.3)*(results*0.3) * 1.5;
     o.pos = mul (UNITY_MATRIX_VP, o.wPos);
+
+
 
     #ifndef NO_DEPTH_OFF
     o.binormal.y = (_Waves1.w * waves1x.a + _Waves2.w * waves2x.a) - (_Waves1.w * waves1.a + _Waves2.w * waves2.a);
@@ -161,8 +177,6 @@ v2f vert (appdata_simple v)
     o.tangent.y = (_Waves1.w * waves1y.a + _Waves2.w * waves2y.a) - (_Waves1.w * waves1.a + _Waves2.w * waves2.a);
     o.tangent.y *= dist;
 
-    float curvature = abs(waves1x.x - waves1.x)*_Waves1.w* waves1.a + abs(waves2x.x - waves2.x)*_Waves2.w * waves2.a;
-    curvature = max(abs(curvature),abs(waves1y.y - waves1.y)*_Waves1.w* waves1.a + abs(waves2y.y - waves2.y)*_Waves2.w * waves2.a);
 //    float curvature = 10.0 * abs(length(waves2x.xyz - waves2.xyz));
 //    float curvature = (waves2x.w);
     o.tangent = normalize(o.tangent);
@@ -234,15 +248,17 @@ half4 frag (v2f i) : COLOR
 	float dist = (smoothstep(_ClippingStart,_ClippingEnd,length(i._viewDir.xyz)));
 
 
+
+
     fixed atten = LIGHT_ATTENUATION(i);// unitySampleShadowTest(_DepthColor);// LIGHT_ATTENUATION(i);
 
-	float4 waves1 = tex2D(_TextureB,float2(i.wPos.xz * _Waves1.zz + _Time.xx * _Waves1.xy));
+	float4 waves1 = tex2D(_TextureB,float2(i.uv.xz * _Waves1.zz + _Time.xx * _Waves1.xy));
 	waves1.xyz = waves1.xyz * 2.0 - 1.0;
-	float4 waves2 = tex2D(_TextureB,float2(i.wPos.xz * _Waves2.zz + _Time.xx * _Waves2.xy));
+	float4 waves2 = tex2D(_TextureB,float2(i.uv.xz * _Waves2.zz + _Time.xx * _Waves2.xy));
 	waves2.xyz = waves2.xyz * 2.0 - 1.0;
-	float4 waves3 = tex2D(_TextureC,float2(i.wPos.xz * _Waves3.zz + _Time.xx * _Waves3.xy));
+	float4 waves3 = tex2D(_TextureC,float2(i.uv.xz * _Waves3.zz + _Time.xx * _Waves3.xy));
 	waves3.xyz = waves3.xyz * 2.0 - 1.0;
-	float4 waves4 = tex2D(_TextureC,float2(i.wPos.xz * _Waves4.zz + _Time.xx * _Waves4.xy));
+	float4 waves4 = tex2D(_TextureC,float2(i.uv.xz * _Waves4.zz + _Time.xx * _Waves4.xy));
 	waves4.xyz = waves4.xyz * 2.0 - 1.0;
 
 	float3x3 nBasis = float3x3(
@@ -268,19 +284,21 @@ half4 frag (v2f i) : COLOR
 
 //	return float4(fragNormal.y * 0.5 + 0.5,0.0,0.0,1.0);
 
-	float foam = waves1.a * _Waves1.w + 
-	waves2.a * _Waves2.w +
+	float foam = 
 	(waves3.a * _Waves3.w +
 	waves4.a * _Waves4.w);
 
-	foam /= (_Waves1.w+_Waves2.w+_Waves3.w+_Waves4.w);
+	foam /= (_Waves3.w+_Waves4.w);
 	foam = 1-(waves3.a-waves4.a) * 2.0;
-	foam *= _FoamAmount;
+	foam *= foam*_FoamAmount;
+
+	float waveCrest = pow(dot((_currentDirection.xyz + float3(0,1.0,0))*0.707,i.normal.xyz),5.0) ;
+	foam += max(waveCrest,i.normal.w)* 0.5 ; //curvature & normal
+
+	foam = saturate(foam);
 //	foam = pow(tex2D(_Foam,float2(i.wPos.xz * 0.1)),1.0+foam * 2.0);
-	foam = tex2D(_Foam,float2(i.wPos.xz * 0.5))*(foam);
+	foam *= (tex2D(_Foam,float2(i.uv.xz * 0.1)) + tex2D(_Foam,float2(i.uv.xz * 0.2)));
 	foam *= foam;
-	foam *= tex2D(_Foam,float2(i.wPos.xz * 2.0));
-	foam *= i.normal.w ;
 //	return float4(fragNormal.xyz*0.5 + 0.5,1.0);
 
 //    return 0.5
@@ -366,7 +384,7 @@ half4 frag (v2f i) : COLOR
 //  	return float4(dot2,dot2,dot2,1.0);
     texcol.rgb +=  0.8 * atten * dot2 * _LightColor0.rgb;
 
-    texcol.rgb += atten * i.normal.w * _SSSColor.rgb * (clamp(i._viewDir.y * 0.2 + 5.0,0.5,1.0));
+    texcol.rgb += 0.1 * i.normal.w * _SSSColor.rgb * (max(0.0,dot(viewDirN,i.lightDir)) + clamp(i._viewDir.y * 0.2 + 5.0,0.5,1.0));
 //	return *0.2;
 
 //    return float4(i.normal*0.5+0.5,1.0);
@@ -376,7 +394,55 @@ half4 frag (v2f i) : COLOR
 
 //    texcol.rgb +=  _DepthColor.rgb * (8 * _DepthColor.a - 4)  * pow(1.0-i.colo.w,4);
 
+	#define REFLECTION 
 
+	#ifdef REFLECTION
+
+	float2 uvcreen = i.pos.xy / float2(_ScreenParams.x,-_ScreenParams.y) + float2(0.0,1.0);
+	float3 normalView = mul((float3x3)UNITY_MATRIX_V, i.normal.xyz - float3(0,1.0,0));
+	float2 offsetuv = 0.1*  normalView.xy;
+
+	float4 depth = tex2D(_Depth,uvcreen + offsetuv);
+	depth -= 0.5;
+	depth *= 500.0;
+
+	float subSurfaceRayDist = dot(viewDirN,(depth.xyz-i.wPos.xyz)) * 0.2;
+
+//	return float4(length(depth.xyz * 0.001),0.0,0.0,1.0);
+//	return float4(length(depth.xyz * 0.001),0.0,0.0,1.0);
+//	return float4(subSurfaceRayDist,0.0,0.0,1.0);
+	subSurfaceRayDist = saturate(subSurfaceRayDist);
+
+	float4 render;
+	if (subSurfaceRayDist > 0 && subSurfaceRayDist < 1.0)
+	{
+		render = tex2D(_Render,uvcreen + offsetuv*subSurfaceRayDist);
+		depth = tex2D(_Depth,uvcreen + offsetuv*subSurfaceRayDist);
+		depth -= 0.5;
+		depth *= 500.0;
+	}
+	else
+	{
+		render = tex2D(_Render,uvcreen);
+		depth = tex2D(_Depth,uvcreen);
+		depth -= 0.5;
+		depth *= 500.0;
+	}
+
+
+	subSurfaceRayDist = dot(viewDirN,(depth.xyz-i.wPos.xyz)) * 0.2;
+//	return render;
+//	return render;
+	subSurfaceRayDist = pow(saturate(subSurfaceRayDist),0.5);
+	render.rgb = lerp(render.rgb,
+						_SSSColor.rgb,
+						subSurfaceRayDist);
+	texcol.rgb = lerp(render.rgb
+						,texcol.rgb,
+						subSurfaceRayDist);
+
+//	return float4(subSurfaceRayDist,0.0,0.0,1.0) ;
+	#endif
 
 //	texcol = lerp(texcol,float4(1,1,1,1), max(0.0,atten  - 0.0));
     return texcol;

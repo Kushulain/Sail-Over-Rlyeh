@@ -17,7 +17,7 @@ CGINCLUDE
 #define UNITY_USE_RECEIVER_PLANE_BIAS 0
 #define UNITY_RECEIVER_PLANE_MIN_FRACTIONAL_ERROR 0.05f
 #define VOLUMETRIC_SHADOW 18
-#define VOLUMETRIC_SHADOW_HEIGHT 8.0
+#define VOLUMETRIC_SHADOW_HEIGHT 5.0
 
 
 // Blend between shadow cascades to hide the transition seams?
@@ -560,6 +560,8 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 		lwpos.w = 1.0;
 
 	 	float weight = pow(1.0-(lwpos.y / VOLUMETRIC_SHADOW_HEIGHT),1.0);
+//	 	weight *= length((lwpos.xyz - (floor(lwpos.xyz * (sin(lwpos.xyz) * 0.5 + 1.0)))));
+//		 	weight *= sin(_Time+lwpos.x) * 0.5 + 0.5;
 		fixed4 cascadeWeights = GET_CASCADE_WEIGHTS (lwpos, stepVPos.z);
 		float sample = unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) );
 		sampleSum += sample;
@@ -580,6 +582,8 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 			lwpos.w = 1.0;
 
 		 	float weight = pow(1.0-(lwpos.y / VOLUMETRIC_SHADOW_HEIGHT),1.0);
+//	 	weight *= length((lwpos.xyz - (floor(lwpos.xyz * (sin(lwpos.xyz) * 0.5 + 1.0)))));
+//		 	weight *= sin(_Time+lwpos.x) * 0.5 + 0.5;
 			fixed4 cascadeWeights = GET_CASCADE_WEIGHTS (lwpos, stepVPos.z);
 			float sample = unity_sampleShadowmap( GET_SHADOW_COORDINATES(lwpos, cascadeWeights) );
 			sampleSum += sample;

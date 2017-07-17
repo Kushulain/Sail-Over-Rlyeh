@@ -5,6 +5,8 @@ Shader ".Cat/Water" {
 		_ZColor ("Zenith Color", Color) = (1,1,1,1)
 		_HColor ("horizon Color", Color) = (1,1,1,1)
 		_SSSColor ("SSS Color", Color) = (1,1,1,1)
+		_Depth ("depth", 2D) = "white" { }
+		_Render ("render", 2D) = "white" { }
 		_TextureA ("diffuse", 2D) = "white" { }
 		_TextureB ("random", 2D) = "white" { }
 		_TextureC ("detai", 2D) = "white" { }
@@ -12,6 +14,7 @@ Shader ".Cat/Water" {
 		_FoamAmount ("_FoamAmount", Range(-10.0,10.0)) = 0.5
 		_windDirection ("Wind Direction", Vector) = (1,1,1,1)
 		_windRandomness ("Wind Randomness", Range(0.0,2.0)) = 0.5
+		_currentDirection ("Current Direction", Vector) = (1,0,0,0)
 		_Size ("Size", Range(0,10)) = 0.5
 		_NormalIntensity ("_NormalIntensity", Range(0,100)) = 0.5
 		_RandomPosition ("_RandomPosition", Range(0,1)) = 0.5
