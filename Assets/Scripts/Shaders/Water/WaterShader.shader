@@ -75,6 +75,7 @@ Shader ".Cat/Water" {
 			#pragma target 5.0
 			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
 			#pragma multi_compile CAM_ATTACHED_ON CAM_ATTACHED_OFF
+			#pragma multi_compile REFLECTION_OFF REFLECTION_ON
 
 			#pragma exclude_renderers gles
 //				#pragma geometry GS_Main
@@ -120,6 +121,7 @@ Shader ".Cat/Water" {
 			#pragma target 5.0
 			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
 			#pragma multi_compile CAM_ATTACHED_ON CAM_ATTACHED_OFF
+			#pragma multi_compile REFLECTION_OFF REFLECTION_ON
 
 //				#pragma geometry GS_Main
 			#pragma vertex tessvert
@@ -163,6 +165,7 @@ Shader ".Cat/Water" {
 			#pragma target 5.0
 			#pragma multi_compile NO_DEPTH_ON NO_DEPTH_OFF
 			#pragma multi_compile CAM_ATTACHED_ON CAM_ATTACHED_OFF
+			#pragma multi_compile REFLECTION_OFF REFLECTION_ON
 
 //				#pragma geometry GS_Main
 			#pragma vertex tessvert

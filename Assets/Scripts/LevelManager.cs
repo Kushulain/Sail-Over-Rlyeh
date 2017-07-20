@@ -10,73 +10,98 @@ public class LevelManager : MonoBehaviour {
 
 	public Camera MainCam;
 	public Camera DepthCam;
-	public bool depthTextureEnabled = true;
+	public Camera ReflectionCam;
+	public bool depthTextureSet = false;
 	public RenderTexture depthTexture;
-	public bool renderTextureEnabled = true;
+	public bool renderTextureSet = false;
 	public RenderTexture renderTexture;
 	public Renderer[] water;
 	public Shader depthShader;
+	public bool transparencyAndReflection = true;
+
+	static LevelManager instance;
+	public static LevelManager GetSingleton()
+	{
+		if (instance == null)
+		{
+			instance = FindObjectOfType<LevelManager>();
+			if (instance == null)
+				Debug.LogError("A LevelManager is missing in your scene !");
+		}
+		return instance;
+	}
 
 	// Use this for initialization
 	void Start () {
-		DepthCam.fieldOfView = MainCam.fieldOfView;
-		DepthCam.backgroundColor = new Color(0.0f,0.0f,0.0f,1.0f);
-
-		depthTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGBFloat);
-		renderTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGB32);
-
-		if (depthTextureEnabled)
-		{
-			foreach (Renderer rend in water)
-			{
-				rend.sharedMaterial.SetTexture("_Depth",depthTexture);
-				rend.sharedMaterial.SetTexture("_Render",renderTexture);
-			}
-			//DepthCam.depthTextureMode = DepthTextureMode.
-		}
+//		DepthCam.fieldOfView = MainCam.fieldOfView;
+//		DepthCam.backgroundColor = new Color(0.0f,0.0f,0.0f,1.0f);
+//
+//		depthTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGBFloat);
+//		renderTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGB32);
+//
+//		if (depthTextureEnabled)
+//		{
+//			foreach (Renderer rend in water)
+//			{
+//				rend.sharedMaterial.SetTexture("_Depth",depthTexture);
+//				rend.sharedMaterial.SetTexture("_Render",renderTexture);
+//			}
+//			//DepthCam.depthTextureMode = DepthTextureMode.
+//		}
 	}
 
 	// Update is called once per frame
 	void Update () {
-		RenderDepth();
+//		RenderDepth();
+
+		if (transparencyAndReflection)
+		{
+			if (depthTextureSet && renderTextureSet)
+			{
+				Shader.EnableKeyword("REFLECTION_ON");
+				Shader.DisableKeyword("REFLECTION_OFF");
+			}
+		}
+	}
+
+	void OnDestroy()
+	{
+
+		Shader.DisableKeyword("REFLECTION_ON");
+		Shader.EnableKeyword("REFLECTION_OFF");
+	}
+
+	public void SetDepthRT(RenderTexture RT)
+	{
+		depthTextureSet = true;
+		foreach (Renderer rend in water)
+		{
+			rend.sharedMaterial.SetTexture("_Depth",RT);
+		}
+	}
+
+	public void SetRenderRT(RenderTexture RT)
+	{
+		renderTextureSet = true;
+		foreach (Renderer rend in water)
+		{
+			rend.sharedMaterial.SetTexture("_Render",RT);
+		}
 	}
 
 	public void RenderDepth()
 	{
-		Debug.Log(MainCam.pixelWidth);
-		Debug.Log(depthTexture.width);
-		if (MainCam.pixelWidth != depthTexture.width || MainCam.pixelHeight != depthTexture.height)
-		{
-//			depthTexture.width = MainCam.pixelWidth;
-//			depthTexture.height = MainCam.pixelHeight;
-//			renderTexture.width = MainCam.pixelWidth;
-//			renderTexture.height = MainCam.pixelHeight;
-			depthTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGBFloat);
-			renderTexture = new RenderTexture(MainCam.pixelWidth,MainCam.pixelHeight,16,RenderTextureFormat.ARGB32);
-			foreach (Renderer rend in water)
-			{
-				rend.sharedMaterial.SetTexture("_Depth",depthTexture);
-				rend.sharedMaterial.SetTexture("_Render",renderTexture);
-			}
-		}
+//		Debug.Log(MainCam.pixelWidth);
+//		Debug.Log(depthTexture.width);
 
 //		Texture2D tex = new Texture2D(textSize_x, textSize_y, TextureFormat.RGBAHalf, false);
 
-		Vector3 colorClear = DepthCam.transform.forward;
-//		colorClear.x = colorClear.x > 0f ? 1f: -1f;
-//		colorClear.y = colorClear.y > 0f ? 1f: -1f;
-//		colorClear.z = colorClear.z > 0f ? 1f: -1f;
-		colorClear = colorClear * 0.5f + Vector3.one * 0.5f;
-
-		// Initialize and render
-		DepthCam.backgroundColor = new Color(colorClear.x,colorClear.y,colorClear.z,1.0f);
-		DepthCam.clearFlags = CameraClearFlags.Color;
-		DepthCam.targetTexture = depthTexture;
-		DepthCam.RenderWithShader(depthShader,"");
-
-		DepthCam.clearFlags = CameraClearFlags.Skybox;
-		DepthCam.targetTexture = renderTexture;
-		DepthCam.Render();
+//		DepthCam.targetTexture = depthTexture;
+//		DepthCam.RenderWithShader(depthShader,"");
+//
+//		DepthCam.clearFlags = CameraClearFlags.Skybox;
+//		DepthCam.targetTexture = renderTexture;
+//		DepthCam.Render();
 //		RenderTexture.active = depthTexture;
 //
 //		// Read pixels

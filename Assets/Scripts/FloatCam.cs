@@ -50,27 +50,49 @@ public class FloatCam : MonoBehaviour {
 	public int textSize_y = 128;
 
 	public RenderTexture RTT;
+	public Texture2D tex;
+	bool renderedOnce = false;
 
 	// Use this for initialization
 	void Start () {
 		//		cam.
 		RTT = new RenderTexture(textSize_x, textSize_y, 24, RenderTextureFormat.ARGBFloat);
+		tex = new Texture2D(textSize_x, textSize_y, TextureFormat.RGBAHalf, false);
+		cam.targetTexture = RTT;
 	}
 	
 	// Update is called once per frame
 	void Update () {
+		
+
+
+	}
+
+	void OnPreRender()
+	{
 		Shader.EnableKeyword("NO_DEPTH_OFF");
 		Shader.DisableKeyword("NO_DEPTH_ON");
 		Shader.EnableKeyword("CAM_ATTACHED_OFF");
 		Shader.DisableKeyword("CAM_ATTACHED_ON");
-		Texture2D tex = new Texture2D(textSize_x, textSize_y, TextureFormat.RGBAHalf, false);
 
 		// Initialize and render
-		cam.targetTexture = RTT;
-//		cam.ra
-		cam.Render();
-		RenderTexture.active = RTT;
+//		cam.targetTexture = RTT;
+		//		cam.ra
+//		cam.Render();
+//		RenderTexture.active = RTT;
+	}
 
+	void OnPostRender()
+	{
+
+		Shader.EnableKeyword("NO_DEPTH_ON");
+		Shader.DisableKeyword("NO_DEPTH_OFF");
+		Shader.EnableKeyword("CAM_ATTACHED_ON");
+		Shader.DisableKeyword("CAM_ATTACHED_OFF");
+		renderedOnce = true;
+
+		if (!renderedOnce)
+			return;
 		// Read pixels
 		tex.ReadPixels(new Rect(0,0,textSize_x,textSize_y), 0, 0);
 		tex.Apply();
@@ -79,19 +101,14 @@ public class FloatCam : MonoBehaviour {
 		{
 			Color c = tex.GetPixel((int)(floatingSpots[i].position.x * textSize_x),
 				(int)((floatingSpots[i].position.y) * textSize_y));
-//			Debug.Log(c.r);
-//			Debug.Log(c.r);
+			//			Debug.Log(c.r);
+			//			Debug.Log(c.r);
 			floatingSpots[i].heightResult = 1f - c.r ;
 		}
-
+//
 		// Clean up
-//		cam.targetTexture = null;
-		RenderTexture.active = null; // added to avoid errors 
+		//		cam.targetTexture = null;
+//		RenderTexture.active = null; // added to avoid errors 
 		//		DestroyImmediate(rt);
-		Shader.EnableKeyword("NO_DEPTH_ON");
-		Shader.DisableKeyword("NO_DEPTH_OFF");
-		Shader.EnableKeyword("CAM_ATTACHED_ON");
-		Shader.DisableKeyword("CAM_ATTACHED_OFF");
-
 	}
 }

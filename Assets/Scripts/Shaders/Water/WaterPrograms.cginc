@@ -395,9 +395,9 @@ half4 frag (v2f i) : COLOR
 
 //    texcol.rgb +=  _DepthColor.rgb * (8 * _DepthColor.a - 4)  * pow(1.0-i.colo.w,4);
 
-	#define REFLECTION 
+//	#define REFLECTION 
 
-	#ifdef REFLECTION
+	#ifdef REFLECTION_ON
 	if (realDist < 300.0)
 	{
 
