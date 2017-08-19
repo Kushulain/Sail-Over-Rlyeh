@@ -143,7 +143,7 @@ v2f vert (appdata_simple v)
     o.binormal.x = minTess;
     o.tangent.z = minTess;
 
-    float2 stretch = float2(4.0,1.0);
+    float2 stretch = float2(2.0,1.0);
 
     float4 waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
     float4 waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
@@ -154,6 +154,13 @@ v2f vert (appdata_simple v)
     float4 waves2y = tex2Dlod(_TextureB,float4((float2(0.0,minTess) + o.wPos.xz) * _Waves2.zz * stretch + _Time.xx * _Waves2.xy,1,1));
 //    waves2.xyz = waves2.xyz * 2.0 - 1.0;
     //float4 detail += tex2Dlod(_TextureB,float4(o.wPos.xz*0.145173,0.1,0.0));
+//    float mix = sin(_Time.y*0.13) * 0.5 + 0.5;
+    float mix = sin(_Time.y*0.22)*0.5+0.5;
+    float mix2 = cos(_Time.y*0.22)*0.5+0.5;
+    //mix = mix2*(lerp(mix2,1.0,mix));
+//    (cos(x)*0.5+0.5)*((sin(x)*0.5 + 0.5)*(cos(x)*0.5+0.5)+(1.0-(sin(x)*0.5 + 0.5)))
+    _Waves1.w *= 1.0-pow(mix2*(lerp(mix2*mix2,1.0,mix)),1.0);
+    _Waves2.w *= 1.0-pow((1.0-mix2)*lerp(1.0-mix2,1.0,1.0-mix),1.0);
     float curvature = abs(waves1x.x - waves1.x)*_Waves1.w* waves1.a + abs(waves2x.x - waves2.x)*_Waves2.w * waves2.a;
     curvature = max(abs(curvature),abs(waves1y.y - waves1.y)*_Waves1.w* waves1.a + abs(waves2y.y - waves2.y)*_Waves2.w * waves2.a);
 
