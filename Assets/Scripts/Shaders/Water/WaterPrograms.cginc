@@ -52,6 +52,7 @@ float _NormalIntensity;
 float _ClippingStart;
 float _ClippingEnd;
 float _FoamAmount;
+float _Curvature;
 
 
 struct v2f {
@@ -143,7 +144,7 @@ v2f vert (appdata_simple v)
     o.binormal.x = minTess;
     o.tangent.z = minTess;
 
-    float2 stretch = float2(2.0,1.0);
+    float2 stretch = float2(1.0,1.0);
 
     float4 waves1 = tex2Dlod(_TextureB,float4(o.wPos.xz * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
     float4 waves1x = tex2Dlod(_TextureB,float4((float2(minTess,0.0) + o.wPos.xz) * _Waves1.zz * stretch + _Time.xx * _Waves1.xy,1,1));
@@ -173,7 +174,7 @@ v2f vert (appdata_simple v)
 
     o.wPos.y += curvature * 0.1 ;
 //    o.wPos.x += curvature * 0.1;
-    o.wPos.x += (results*0.3)*(results*0.3) * 1.5;
+    o.wPos.x += (results*0.3)*(results*0.3) * _Curvature;
     o.pos = mul (UNITY_MATRIX_VP, o.wPos);
 
 
@@ -188,7 +189,7 @@ v2f vert (appdata_simple v)
 //    float curvature = (waves2x.w);
     o.tangent = normalize(o.tangent);
     o.binormal = normalize(o.binormal);
-    o.normal = float4(cross(o.tangent,o.binormal),curvature);
+    o.normal = float4(cross(o.tangent,o.binormal),curvature * 0.3);
     #endif
 //    o.normal = (_Waves1.w * waves1x + _Waves2.w * waves2x) - (_Waves1.w * waves1 + _Waves2.w * waves2);
 

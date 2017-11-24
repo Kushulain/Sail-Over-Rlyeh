@@ -22,6 +22,7 @@ Shader ".Cat/Water" {
 		_ClippingStart ("_ClippingStart", Range(0,500)) = 40
 		_ClippingEnd ("_ClippingEnd", Range(0,500)) = 80
 		_Tess ("Tess", Range(0,100)) = 0.5
+		_Curvature ("Curvature", Range(0,1.0)) = 0.5
 		_Waves1 ("Waves1", Vector) = (1,1,1,1)
 		_Waves2 ("Waves2", Vector) = (1,1,1,1)
 		_Waves3 ("Detail3", Vector) = (1,1,1,1)

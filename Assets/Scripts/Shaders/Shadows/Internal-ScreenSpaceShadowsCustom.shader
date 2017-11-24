@@ -17,7 +17,7 @@ CGINCLUDE
 #define UNITY_USE_RECEIVER_PLANE_BIAS 0
 #define UNITY_RECEIVER_PLANE_MIN_FRACTIONAL_ERROR 0.05f
 #define VOLUMETRIC_SHADOW 18
-#define VOLUMETRIC_SHADOW_HEIGHT 3.0
+#define VOLUMETRIC_SHADOW_HEIGHT 8.0
 
 
 // Blend between shadow cascades to hide the transition seams?
@@ -513,6 +513,7 @@ fixed4 frag_pcf5x5(v2f i) : SV_Target
 	float4 start = float4(_WorldSpaceCameraPos,1.0);
 	float4 dir = float4(wpos-_WorldSpaceCameraPos,1.0);
 	float lengthDir = 1.0;
+
 
 	if ((start.y > VOLUMETRIC_SHADOW_HEIGHT && (start.y+dir.y) < VOLUMETRIC_SHADOW_HEIGHT)
 	|| start.y < VOLUMETRIC_SHADOW_HEIGHT)
